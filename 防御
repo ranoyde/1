@@ -1,0 +1,45 @@
+-- [[ EXODUS PROTECTION: ANTI-CARRY & EXECUTION ]]
+-- 逻辑适配：LS protet.lua (修改 Carrying Flag 2)
+
+script.set_name("Exo-抗搬运处决")
+
+-- 核心循环
+local function anti_carry_loop()
+    while true do
+        -- 获取本地玩家 Ped
+        local ped = native.player.player_ped_id()
+        
+        if ped ~= 0 then
+            -- 【核心逻辑：修改携带标志位】
+            -- 原脚本逻辑：natives.entity_setEntityCarryingFlag(my_ped, 2, false)
+            -- 标志位 2 通常控制实体是否可以被“Pickup”（捡起/抱起）
+            -- 强制将其设为 false，防止被脚本判定为可处决的尸体
+            native.entity._set_entity_carrying_flag(ped, 2, false)
+
+            -- 【增强防护：状态锁定】
+            -- 禁止被近战锁定 (防止 R 键交互)
+            native.ped.set_ped_config_flag(ped, 120, true) 
+            -- 禁止被套索 (Flag 442)
+            native.ped.set_ped_config_flag(ped, 442, false)
+            
+            -- 【任务防御】
+            -- 防止外部非临时任务接管（如 AnimScene）
+            native.task.task_set_blocking_of_non_temporary_events(ped, true)
+        end
+        
+        -- 高频刷新确保 Flag 不会被对方脚本改回去
+        wait(0)
+    end
+end
+
+-- 启动后台线程
+if pcall(function()
+    -- 启动逻辑
+    anti_carry_loop()
+end) then
+    -- 运行正常
+else
+    script.keep_alive()
+end
+
+script.keep_alive()
